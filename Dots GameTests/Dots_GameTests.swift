@@ -1,0 +1,17 @@
+//
+//  Dots_GameTests.swift
+//  Dots GameTests
+//
+//  Created by Maksymilian Rechnio on 27/05/2025.
+//
+
+import Testing
+@testable import Dots_Game
+
+struct Dots_GameTests {
+
+    @Test func example() async throws {
+        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+    }
+
+}
