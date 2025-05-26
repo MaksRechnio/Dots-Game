@@ -1,9 +1,3 @@
-//
-//  Dots_GameUITestsLaunchTests.swift
-//  Dots GameUITests
-//
-//  Created by Maksymilian Rechnio on 27/05/2025.
-//
 
 import XCTest
 

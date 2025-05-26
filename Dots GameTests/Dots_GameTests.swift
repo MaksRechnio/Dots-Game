@@ -1,9 +1,4 @@
-//
-//  Dots_GameTests.swift
-//  Dots GameTests
-//
-//  Created by Maksymilian Rechnio on 27/05/2025.
-//
+
 
 import Testing
 @testable import Dots_Game
