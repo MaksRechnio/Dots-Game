@@ -88,11 +88,36 @@ struct ContentView: View {
     }
 
     func spawnDot() {
-        let x = CGFloat.random(in: 40...(UIScreen.main.bounds.width - 40))
-        let y = CGFloat.random(in: 100...(UIScreen.main.bounds.height - 100))
-        dots.append(Dot(position: CGPoint(x: x, y: y)))
-    }
+        let maxAttempts = 30
+        var attempts = 0
+        var newDot: Dot?
 
+        while attempts < maxAttempts {
+            let x = CGFloat.random(in: 40...(UIScreen.main.bounds.width - 40))
+            let y = CGFloat.random(in: 100...(UIScreen.main.bounds.height - 100))
+            let position = CGPoint(x: x, y: y)
+            
+            // Check if too close to existing dots
+            let isTooClose = dots.contains { existingDot in
+                let distance = hypot(existingDot.position.x - position.x, existingDot.position.y - position.y)
+                return distance < 80 // minimum distance between dot centers (dot size + padding)
+            }
+            
+            if !isTooClose {
+                newDot = Dot(position: position)
+                break
+            }
+
+            attempts += 1
+        }
+
+        if let validDot = newDot {
+            dots.append(validDot)
+        } else {
+            print("Failed to place dot after \(maxAttempts) attempts")
+        }
+    }
+    
     func spawnInitialDots(count: Int) {
         dots = []
         for _ in 0..<count {
