@@ -7,18 +7,21 @@ struct ContentView: View {
     @State private var timeRemaining = 60
     @State private var gameActive = false
     @State private var timer: Timer?
-    @State private var clickSoundPlayer: AVAudioPlayer? // 👈 THIS IS NEEDED
-    @State private var highScore = 0
-    
+    @State private var clickSoundPlayer: AVAudioPlayer? //for the clickedDot sound
+    @State private var countdownSoundPlayer: AVAudioPlayer? // for the countdown
+    @State private var highScore = 0    //preset highscore for everyone
+    @State private var countdown = 5
+    @State private var isCountingDown = false
+
     var body: some View {
         ZStack {
             Color.white.ignoresSafeArea()
             
-            // Kropki
+            // Dots
             ForEach(dots) { dot in
                 Circle()
                     .fill(Color.blue)
-                    .frame(width: 70, height: 70) //Changed the dot for a bigger one for better experience
+                    .frame(width: 70, height: 70)
                     .shadow(color: .gray.opacity(0.5), radius: 5, x: 0, y: 4)
                     .position(dot.position)
                     .onTapGesture {
@@ -34,10 +37,10 @@ struct ContentView: View {
 
             VStack {
                 HStack {
-                        Text("High Score: \(highScore)")
-                            .foregroundColor(.black)
-                        Spacer()
-                    }
+                    Text("High Score: \(highScore)")
+                        .foregroundColor(.black)
+                    Spacer()
+                }
                 HStack {
                     Text("Score: \(score)")
                         .foregroundColor(.black)
@@ -46,11 +49,12 @@ struct ContentView: View {
                         .foregroundColor(.black)
                 }
                 .padding()
+                
                 Spacer()
                 
-                if !gameActive {
+                if !gameActive && !isCountingDown {
                     Button("Start Game") {
-                        startGame()
+                        startCountdown()
                     }
                     .padding()
                     .background(Color.green)
@@ -59,19 +63,47 @@ struct ContentView: View {
                 }
             }
             .padding()
+
+            // Countdown Overlay
+            if isCountingDown {
+                Text("\(countdown)")
+                    .font(.system(size: 100, weight: .bold))
+                    .foregroundColor(.black)
+                    .transition(.scale)
+            }
         }
         .onAppear {
             spawnInitialDots(count: 4)
-            loadClickSound()
+            loadSounds()
         }
     }
 
-    func startGame() {
+
+    func startCountdown() {
         score = 0
-        timeRemaining = 45 //changed for 45 seconds and one minute is quite long
-        gameActive = true
+        timeRemaining = 45
+        countdown = 5
+        isCountingDown = true
+        gameActive = false
         spawnInitialDots(count: 5)
-        
+
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
+            countdownSoundPlayer?.currentTime = 0  // 🔁 Restart from beginning
+            countdownSoundPlayer?.play()           // ▶️ Play from start
+
+            if countdown > 1 {
+                countdown -= 1
+            } else {
+                timer.invalidate()
+                isCountingDown = false
+                gameActive = true
+                startGameTimer()
+            }
+        }
+    }
+    
+
+    func startGameTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if timeRemaining > 0 {
@@ -79,13 +111,14 @@ struct ContentView: View {
             } else {
                 gameActive = false
                 timer?.invalidate()
-            }
-            // ✅ Update high score
                 if score > highScore {
                     highScore = score
                 }
+            }
         }
     }
+
+    // MARK: - Dot Logic
 
     func spawnDot() {
         let maxAttempts = 30
@@ -97,10 +130,9 @@ struct ContentView: View {
             let y = CGFloat.random(in: 100...(UIScreen.main.bounds.height - 100))
             let position = CGPoint(x: x, y: y)
             
-            // Check if too close to existing dots
             let isTooClose = dots.contains { existingDot in
                 let distance = hypot(existingDot.position.x - position.x, existingDot.position.y - position.y)
-                return distance < 80 // minimum distance between dot centers (dot size + padding)
+                return distance < 80
             }
             
             if !isTooClose {
@@ -117,7 +149,7 @@ struct ContentView: View {
             print("Failed to place dot after \(maxAttempts) attempts")
         }
     }
-    
+
     func spawnInitialDots(count: Int) {
         dots = []
         for _ in 0..<count {
@@ -128,17 +160,26 @@ struct ContentView: View {
     func remove(_ dot: Dot) {
         dots.removeAll { $0.id == dot.id }
     }
-    
-    // ✅ Move this function inside the struct
-        func loadClickSound() {
-            if let soundURL = Bundle.main.url(forResource: "click", withExtension: "mp3") {
-                do {
-                    clickSoundPlayer = try AVAudioPlayer(contentsOf: soundURL)
-                    clickSoundPlayer?.prepareToPlay()
-                } catch {
-                    print("Error loading sound: \(error.localizedDescription)")
-                }
+
+    func loadSounds() { //remade the function to account for the countdown sound as well and possible other ones in the future.
+        // Click sound
+        if let clickURL = Bundle.main.url(forResource: "click", withExtension: "mp3") {
+            do {
+                clickSoundPlayer = try AVAudioPlayer(contentsOf: clickURL)
+                clickSoundPlayer?.prepareToPlay()
+            } catch {
+                print("Error loading click sound: \(error.localizedDescription)")
             }
         }
+        
+        // Countdown sound
+        if let countdownURL = Bundle.main.url(forResource: "countdown", withExtension: "mp3") {
+            do {
+                countdownSoundPlayer = try AVAudioPlayer(contentsOf: countdownURL)
+                countdownSoundPlayer?.prepareToPlay()
+            } catch {
+                print("Error loading countdown sound: \(error.localizedDescription)")
+            }
+        }
+    }
 }
-
